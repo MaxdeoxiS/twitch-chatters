@@ -8,6 +8,7 @@ import Button from '@mui/material/Button';
 
 import styles from '../styles/Home.module.css'
 import ChattersList from '../components/ChattersList'
+import SearchInput from '../components/SearchInput'
 import { Check, Edit, Group } from '@mui/icons-material'
 
 function formatChatters(allChatters) {
@@ -43,6 +44,7 @@ export default function Home() {
   const [chatters, setChatters] = useState([])
   const [chattersCount, setChattersCount] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [searchValue, setSearchValue] = useState('')
 
   useEffect(() => {
     async function fetchChatters() {
@@ -71,7 +73,6 @@ export default function Home() {
 
       <main className={styles.main}>
         <div className={styles.header}>
-
           {displaySearchBox ? (
             <Stack spacing={2} direction="row" style={{ maxWidth: 220 }}>
               <TextField
@@ -92,10 +93,10 @@ export default function Home() {
               </Button>
             </Stack>
           )}
-
         </div>
 
-        <ChattersList chatters={chatters} />
+        <SearchInput value={searchValue} onChange={e => setSearchValue(e.target.value)} />
+        <ChattersList chatters={chatters?.filter(c => c.username?.toLowerCase().includes(searchValue.toLowerCase()))} />
       </main>
     </div>
   )
