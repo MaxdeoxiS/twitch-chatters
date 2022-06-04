@@ -3,9 +3,38 @@ import Head from 'next/head'
 import { useEffect, useState } from 'react'
 import TextField from '@mui/material/TextField'
 import Stack from '@mui/material/Stack'
-import Button from '@mui/material/Button'
+import LoadingButton from '@mui/lab/LoadingButton';
+import Button from '@mui/material/Button';
 
 import styles from '../styles/Home.module.css'
+import ChattersList from '../components/ChattersList'
+import { Check, Edit, Group } from '@mui/icons-material'
+
+function formatChatters(allChatters) {
+  if (!allChatters) {
+    return []
+  }
+  const moderators = allChatters.moderators.map(m => {
+    return {
+      username: m,
+      status: 'moderator'
+    }
+  });
+  const vips = allChatters.vips.map(m => {
+    return {
+      username: m,
+      status: 'vip'
+    }
+  });
+  const viewers = allChatters.viewers.map(m => {
+    return {
+      username: m,
+      status: 'viewer'
+    }
+  });
+
+  return [...moderators, ...vips, ...viewers];
+}
 
 export default function Home() {
   const [streamer, setStreamer] = useState()
@@ -13,15 +42,19 @@ export default function Home() {
   const [displaySearchBox, setDisplayCheckbox] = useState(true)
   const [chatters, setChatters] = useState([])
   const [chattersCount, setChattersCount] = useState(null)
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     async function fetchChatters() {
+      setLoading(true)
       const { data } = await axios.get('/api/chatters/' + streamer);
       const count = data['chatter_count'];
-      setChatters(data.chatters?.viewers);
+      const formattedChatters = formatChatters(data.chatters);
+      setChatters(formattedChatters);
       setChattersCount(count)
       setStreamerValidated(false)
       setDisplayCheckbox(false)
+      setLoading(false)
     }
     if (streamerValidated) {
       fetchChatters();
@@ -37,26 +70,32 @@ export default function Home() {
       </Head>
 
       <main className={styles.main}>
-        {displaySearchBox ? (
-        <Stack spacing={2} direction="row">
-          <TextField
-            onChange={e => setStreamer(e.target.value)}
-            variant="outlined"
-            value={streamer}
-          />
-          <Button disabled={!streamer || streamer?.length === 0} variant="outlined" onClick={() => setStreamerValidated(true)}>Valider</Button>
-        </Stack>
-        ) : (
-          <Stack spacing={2} direction="row">
-            <h3>{chattersCount} chatters</h3>
-            <h3>{streamer}</h3>
-            <Button onClick={() => setDisplayCheckbox(true)}>Edit</Button>
-          </Stack>
-        )}
-        
-        {chatters.map((chatter, index) => {
-          return <p key={index}>{chatter}</p>
-        })}
+        <div className={styles.header}>
+
+          {displaySearchBox ? (
+            <Stack spacing={2} direction="row" style={{ maxWidth: 220 }}>
+              <TextField
+                onChange={e => setStreamer(e.target.value)}
+                variant="outlined"
+                value={streamer}
+                size="small"
+              />
+              <LoadingButton size="small" loading={loading} disabled={!streamer || streamer?.length === 0} variant="outlined" onClick={() => setStreamerValidated(true)}>
+                <Check />
+              </LoadingButton>
+            </Stack>
+          ) : (
+            <Stack spacing={2} direction="row" alignItems="center">
+              <h3 className={styles.count_container}><Group />{chattersCount}</h3>
+              <Button endIcon={<Edit />} color="primary" onClick={() => setDisplayCheckbox(true)}>
+                {streamer}
+              </Button>
+            </Stack>
+          )}
+
+        </div>
+
+        <ChattersList chatters={chatters} />
       </main>
     </div>
   )
